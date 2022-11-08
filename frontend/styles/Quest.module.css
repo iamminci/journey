@@ -25,6 +25,7 @@
 
 .userContainer {
   position: relative;
+  width: 100%;
 }
 
 .userImage {
@@ -44,4 +45,15 @@
   padding: 3rem;
   border: 1px solid rgb(65, 65, 65);
   border-radius: 10px;
+}
+
+.completedContainer {
+  width: 500px;
+  padding: 3rem;
+  border: 1px solid rgb(255, 255, 255, 0.2);
+  border-radius: 10px;
+}
+
+.completedText {
+  color: rgba(255, 255, 255, 0.5) !important;
 }
