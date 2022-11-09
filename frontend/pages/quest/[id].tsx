@@ -6,20 +6,26 @@ import {
   Image,
   Link as ChakraLink,
   useToast,
+  Box,
+  Spinner,
+  Divider,
 } from "@chakra-ui/react";
 import { useTron } from "@components/TronProvider";
 import styles from "@styles/Quest.module.css";
 import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
 import { CheckCircleIcon } from "@chakra-ui/icons";
+import withTransition from "@components/withTransition";
+import Error404 from "@components/404";
 
-export default function Quest() {
+function Quest() {
   const toast = useToast();
 
   const [currentStep, setCurrentStep] = useState<any>(1);
   const [fetchedUser, setFetchedUser] = useState<any>();
   const [fetchedQuest, setFetchedQuest] = useState<any>();
   const [isSuccessful, setSuccessful] = useState<boolean>(false);
+  const [isLoading, setLoading] = useState<boolean>(false);
   const router = useRouter();
   const { address } = useTron();
 
@@ -80,35 +86,6 @@ export default function Quest() {
     }
   }, [address]);
 
-  // fetches user
-  useEffect(() => {
-    async function refreshState() {
-      const user = await fetchUser();
-      if (user && questId) {
-        setCurrentStep(Number(user.quests[questId as string].status));
-      }
-    }
-    refreshState();
-  }, [address, fetchUser, questId]);
-
-  // fetches quest
-  useEffect(() => {
-    async function fetchQuest() {
-      if (!questId) return;
-      try {
-        console.log("quest ID: ", questId);
-        const response = await fetch(
-          `http://localhost:8888/api/quests/${questId}`
-        );
-        const quest = await response.json();
-        setFetchedQuest(quest);
-      } catch (err) {
-        console.log(err);
-      }
-    }
-    fetchQuest();
-  }, [questId]);
-
   // check quest has completed
   const verifyQuest = useCallback(async () => {
     try {
@@ -154,20 +131,70 @@ export default function Quest() {
     }
   }, [address, fetchUser, fetchedUser, questId]);
 
+  // fetches user
+  useEffect(() => {
+    async function refreshState() {
+      const user = await fetchUser();
+      if (user && questId) {
+        setCurrentStep(Number(user.quests[questId as string].status));
+      }
+    }
+    refreshState();
+  }, [address, fetchUser, questId]);
+
+  // fetches quest
+  useEffect(() => {
+    async function fetchQuest() {
+      if (!questId) return;
+      setLoading(true);
+      try {
+        const response = await fetch(
+          `http://localhost:8888/api/quests/${questId}`
+        );
+        const quest = await response.json();
+        setFetchedQuest(quest);
+      } catch (err) {
+        console.log(err);
+      }
+      setLoading(false);
+    }
+    fetchQuest();
+  }, [questId]);
+
+  if (isLoading)
+    return (
+      <VStack className={styles.loadingContainer}>
+        <Spinner color="white" size="xl" />
+      </VStack>
+    );
+
+  if (!fetchedQuest) return <Error404 />;
+
   return (
     <VStack className={styles.container}>
       {fetchedQuest && (
         <HStack>
-          <VStack>
-            <Image
-              src="/sunswap_nft.jpg"
-              alt="hi"
-              className={styles.questNFT}
+          <VStack className={styles.rewardContainer}>
+            <Text className={styles.rewardTitle}>Quest Reward</Text>
+            <RewardStep
+              title="$10 in SUN Token"
+              description="Reward will be airdropped into your wallet"
+              stepNum={1}
             />
-            <Button>Claim Reward</Button>
+            <RewardStep
+              title="Sunswap Quest Badge"
+              description="Exclusive NFT for first 100 quest completions"
+              imageUrl="/tronnaut.jpg"
+              stepNum={2}
+            />
+            <RewardStep
+              title="1000 XP"
+              description="Collect experience points to level up!"
+              stepNum={3}
+            />
           </VStack>
           <VStack className={styles.questContainer}>
-            <HStack>
+            <HStack pb="1rem" gap={2}>
               <Image
                 src={fetchedQuest.imageUrl}
                 alt="hi"
@@ -175,37 +202,46 @@ export default function Quest() {
               ></Image>
               <VStack className={styles.questTitleContainer}>
                 <Text className={styles.questTitle}>{fetchedQuest.title}</Text>
-                <Text>{fetchedQuest.description}</Text>
+                <Text className={styles.questSubtitle}>
+                  {fetchedQuest.description}
+                </Text>
               </VStack>
             </HStack>
-            <HStack>
+            <HStack width="100%" justifyContent="space-between" pb=".5rem">
               <Text>Your progress: 0/3</Text>
               <HStack>
                 <Text>17275/20000 rewarded</Text>
               </HStack>
             </HStack>
-            <QuestStep
-              stepNum={1}
-              title="Swap at least 10 TRX to SUN on Sunswap"
-              primaryCtaLabel="Verify"
-              primaryCtaAction={verifyQuest}
-              secondaryCtaLabel="Start"
-              secondaryCtaAction={startQuest}
-              isCompleted={currentStep > 1}
-            />
-            <QuestStep
-              stepNum={2}
-              title="Follow sunswap on Twitter"
-              primaryCtaLabel="Verify"
-              isCompleted={currentStep > 2}
-              isLocked={currentStep < 2}
-            />
-            <QuestStep
-              stepNum={3}
-              title="Claim your 15 TRX reward"
-              primaryCtaLabel="Claim"
-              isLocked={currentStep < 3}
-            />
+            <Box className={styles.divider} />
+            <VStack pt=".5rem" gap={2}>
+              <QuestStep
+                stepNum={1}
+                title="Swap at least 10 TRX to SUN"
+                description="Go to Sunswap and swap"
+                secondaryCtaLabel="Verify"
+                secondaryCtaAction={verifyQuest}
+                primaryCtaLabel="Start"
+                primaryCtaAction={startQuest}
+                isCompleted={currentStep > 1}
+              />
+              <QuestStep
+                stepNum={2}
+                title="Follow sunswap on Twitter"
+                description="Go to Sunswap and swap"
+                secondaryCtaLabel="Verify"
+                primaryCtaLabel="Start"
+                isCompleted={currentStep > 2}
+                isLocked={currentStep < 2}
+              />
+              <QuestStep
+                stepNum={3}
+                title="Claim your 15 TRX reward"
+                description="Go to Sunswap and swap"
+                primaryCtaLabel="Claim"
+                isLocked={currentStep < 3}
+              />
+            </VStack>
           </VStack>
         </HStack>
       )}
@@ -213,9 +249,44 @@ export default function Quest() {
   );
 }
 
+export default withTransition(Quest);
+
+type RewardStepProps = {
+  stepNum: number;
+  title: string;
+  description: string;
+  imageUrl?: string;
+};
+
+function RewardStep({
+  stepNum,
+  title,
+  description,
+  imageUrl,
+}: RewardStepProps) {
+  return (
+    <HStack className={styles.rewardStep}>
+      <Box minWidth="20px">
+        <Text>{stepNum}</Text>
+      </Box>
+      <VStack alignItems="flex-start" width="100%">
+        <Text className={styles.questStepTitle}>{title}</Text>
+        <Text className={styles.questStepDesc}>{description}</Text>
+
+        {imageUrl && (
+          <HStack width="90%" justifyContent="center" pt="1rem">
+            <Image src={imageUrl} alt="nft image" className={styles.nftImage} />
+          </HStack>
+        )}
+      </VStack>
+    </HStack>
+  );
+}
+
 type QuestStepProps = {
   stepNum: number;
   title: string;
+  description: string;
   primaryCtaLabel: string;
   primaryCtaAction?: () => void;
   secondaryCtaLabel?: string;
@@ -227,6 +298,7 @@ type QuestStepProps = {
 function QuestStep({
   stepNum,
   title,
+  description,
   primaryCtaLabel,
   primaryCtaAction,
   secondaryCtaLabel,
@@ -234,34 +306,39 @@ function QuestStep({
   isCompleted,
   isLocked,
 }: QuestStepProps) {
-  return isCompleted ? (
-    <VStack className={styles.completedContainer}>
-      <Text className={styles.completedText}>
-        STEP {stepNum}: {title}
-      </Text>
-      <CheckCircleIcon />
-    </VStack>
-  ) : isLocked ? (
-    <VStack className={styles.completedContainer}>
-      <Text className={styles.completedText}>
-        STEP {stepNum}: {title}
-      </Text>
-      <HStack>
-        <Button disabled>{primaryCtaLabel}</Button>
-        {secondaryCtaLabel && <Button disabled>{secondaryCtaLabel}</Button>}
-      </HStack>
-    </VStack>
-  ) : (
-    <VStack className={styles.questStepContainer}>
-      <Text>
-        STEP {stepNum}: {title}
-      </Text>
-      <HStack>
-        <Button onClick={primaryCtaAction}>{primaryCtaLabel}</Button>
-        {secondaryCtaLabel && (
-          <Button onClick={secondaryCtaAction}>{secondaryCtaLabel}</Button>
+  return (
+    <HStack
+      className={styles.questStep}
+      opacity={isLocked || isCompleted ? 0.55 : 1}
+      cursor={isLocked || isCompleted ? "auto" : "pointer"}
+    >
+      <Box minWidth="20px">
+        {!isCompleted ? <Text>{stepNum}</Text> : <CheckCircleIcon />}
+      </Box>
+      <VStack alignItems="flex-start" width="100%">
+        <Text className={styles.questStepTitle}>{title}</Text>
+        <Text className={styles.questStepDesc}>{description}</Text>
+      </VStack>
+      <HStack width="288px">
+        {secondaryCtaLabel && !isCompleted && (
+          <Button
+            className={styles.secondaryButton}
+            onClick={secondaryCtaAction}
+            isDisabled={isLocked}
+          >
+            {secondaryCtaLabel}
+          </Button>
+        )}
+        {!isCompleted && (
+          <Button
+            className={styles.primaryButton}
+            onClick={primaryCtaAction}
+            isDisabled={isLocked}
+          >
+            {primaryCtaLabel}
+          </Button>
         )}
       </HStack>
-    </VStack>
+    </HStack>
   );
 }

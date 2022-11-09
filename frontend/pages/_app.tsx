@@ -10,17 +10,12 @@ const theme = extendTheme({
   styles: {
     global: {
       "html,body": {
-        backgroundColor: "black",
+        backgroundColor: "#000113",
       },
       "*": {
-        fontFamily: "Poppins",
+        fontFamily: "DM Sans",
         color: "white",
         backgroundColor: "transparent",
-      },
-      a: {
-        _hover: {
-          textDecoration: "underline",
-        },
       },
       button: {
         backgroundColor: "transparent !important",

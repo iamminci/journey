@@ -4,10 +4,11 @@ import { Button, HStack, Image, Spinner, Text, VStack } from "@chakra-ui/react";
 import { useTron } from "./TronProvider";
 import { abridgeAddress } from "@utils/abridgeAddress";
 import { useState } from "react";
-import { handleConnect, handleDisconnect } from "@utils/web3";
+import { handleDisconnect } from "@utils/web3";
 
 const Navbar = () => {
-  const { address, provider, setAddress } = useTron();
+  const { address, setAddress } = useTron();
+  const [isHover, setIsHover] = useState<boolean>(false);
   const [isLoading, setLoading] = useState<boolean>(false);
 
   if (!address) return;
@@ -23,25 +24,32 @@ const Navbar = () => {
         ></Image>
       </Link>
       <HStack className={styles.navLeftSection}>
-        <Text>Explore</Text>
+        <Link href="/">
+          <Text>Explore</Text>
+        </Link>
         <Link href="/profile">
           <Text>My Profile</Text>
         </Link>
-        <Text>Community</Text>
-        {address ? (
-          <VStack
-            className={styles.addressPill}
-            onClick={() => handleDisconnect(setAddress)}
-            cursor="pointer"
-          >
-            <Text>{abridgeAddress(address)}</Text>
-          </VStack>
-        ) : (
+        <Link href="/community">
+          <Text>Community</Text>
+        </Link>
+        <Link href="/partners">
+          <Text>Partners</Text>
+        </Link>
+        {address && (
           <Button
-            onClick={() => handleConnect(setLoading, setAddress, provider)}
-            className={styles.connectButton}
+            className={styles.addressPill}
+            onClick={() => handleDisconnect(setLoading, setAddress)}
+            onMouseEnter={() => setIsHover(true)}
+            onMouseLeave={() => setIsHover(false)}
           >
-            {isLoading ? <Spinner color="white" /> : "Connect Wallet"}
+            {isLoading ? (
+              <Spinner color="white" />
+            ) : isHover ? (
+              "Disconnect"
+            ) : (
+              abridgeAddress(address)
+            )}
           </Button>
         )}
       </HStack>

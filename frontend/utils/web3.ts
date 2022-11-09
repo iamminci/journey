@@ -37,18 +37,25 @@ export async function handleConnect(setLoading, setAddress, provider) {
       if (!fetchedUser) {
         await createUser(provider.defaultAddress.base58);
       }
-      setAddress(provider.defaultAddress.base58);
+      setTimeout(() => {
+        setAddress(provider.defaultAddress.base58);
+        setLoading(false);
+      }, 500);
     }
   } catch (error) {
     console.log(error);
   }
-  setLoading(false);
+  //   setLoading(false);
 }
 
-export async function handleDisconnect(setAddress) {
+export async function handleDisconnect(setIsLoading, setAddress) {
+  setIsLoading(true);
   try {
-    setAddress("");
-    window.localStorage.setItem("TRON_ADDRESS", "");
+    setTimeout(() => {
+      setAddress("");
+      window.localStorage.removeItem("TRON_ADDRESS");
+      setIsLoading(false);
+    }, 500);
   } catch (error) {
     console.error(error);
   }

@@ -7,6 +7,7 @@ import {
   HStack,
 } from "@chakra-ui/react";
 import { useTron } from "@components/TronProvider";
+import withTransition from "@components/withTransition";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 
@@ -89,4 +90,4 @@ function Profile() {
   );
 }
 
-export default Profile;
+export default withTransition(Profile);

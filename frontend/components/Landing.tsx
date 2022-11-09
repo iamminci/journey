@@ -3,8 +3,9 @@ import { handleConnect } from "@utils/web3";
 import { useState } from "react";
 import styles from "../styles/Home.module.css";
 import { useTron } from "./TronProvider";
+import withTransition from "./withTransition";
 
-export function Landing() {
+function Landing() {
   const { provider, setAddress } = useTron();
   const [isLoading, setLoading] = useState<boolean>(false);
 
@@ -32,3 +33,5 @@ export function Landing() {
     </div>
   );
 }
+
+export default withTransition(Landing);
