@@ -1,0 +1,34 @@
+.profileImage {
+  width: 130px;
+  border-radius: 50%;
+}
+
+.profileName {
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 36px;
+}
+
+.profileAddress {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 18px;
+  color: #878787;
+}
+
+.socialIcon {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #1d1f2e;
+  justify-content: center;
+  align-items: center;
+}
+
+.profileContainer {
+  width: 100%;
+  justify-content: space-between;
+  align-items: flex-end !important;
+  position: absolute;
+  bottom: 25px;
+}
