@@ -18,8 +18,9 @@ questsRouter.get("/", async (req: Request, res: Response) => {
       });
     }
 
-    console.log(fetchedQuests);
-    res.status(200).send(`Hi, ${fetchedQuests}`);
+    res
+      .status(200)
+      .send({ message: "Successfully fetched", quests: fetchedQuests });
   } catch (e) {
     console.log(e);
     res.status(500).send("bye");
@@ -35,11 +36,11 @@ questsRouter.get("/:questId", async (req: Request, res: Response) => {
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      console.log("Document data:", docSnap.data());
       res.status(200).send(docSnap.data());
     } else {
-      console.log("No such document!");
+      res.status(404).send({ message: "Quest not found" });
     }
+    return;
   } catch (e) {
     console.log(e);
     res.status(500).send("bye");

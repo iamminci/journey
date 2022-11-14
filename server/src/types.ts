@@ -1,5 +1,5 @@
 export enum QUEST_STATUS {
-  InProgress,
+  InProgress = 1,
   Completed,
   Rewarded,
 }
