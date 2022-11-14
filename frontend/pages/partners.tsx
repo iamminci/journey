@@ -3,7 +3,7 @@ import styles from "../styles/Home.module.css";
 import { useRouter } from "next/router";
 import withTransition from "@components/withTransition";
 import { dummyQuests } from "@data/quests";
-import QuestCard from "@components/QuestCard";
+import QuestCard from "@components/Card";
 import PartnerCard from "@components/PartnerCard";
 
 function Explore() {

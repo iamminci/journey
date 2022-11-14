@@ -12,7 +12,7 @@ import {
 import Landing from "@components/Landing";
 import { useTron } from "@components/TronProvider";
 import withTransition from "@components/withTransition";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "@styles/Profile.module.css";
 import { abridgeAddress } from "@utils/abridgeAddress";
 import { FaDiscord, FaGithub, FaTwitter } from "react-icons/fa";
@@ -29,8 +29,8 @@ function Profile() {
         <Image src="/cover.png" alt="cover"></Image>
         <HStack className={styles.profileContainer}>
           <HStack w="33%" alignItems="flex-end">
-            <RewardPill imageUrl="/medal.svg" label="Platinum" />
-            <RewardPill imageUrl="/sparkle.svg" label="12000 XP" />
+            {/* <RewardPill imageUrl="/medal.svg" label="Platinum" /> */}
+            <RewardPill imageUrl="/sparkle.svg" label="0 XP" />
           </HStack>
           <VStack w="33%">
             <Image
@@ -38,7 +38,7 @@ function Profile() {
               alt="profile"
               className={styles.profileImage}
             ></Image>
-            <Text className={styles.profileName}>journeyor</Text>
+            <Text className={styles.profileName}>Untitled user</Text>
             <Text className={styles.profileAddress}>
               ({abridgeAddress(address)})
             </Text>
@@ -56,18 +56,23 @@ function Profile() {
           </HStack>
         </HStack>
       </VStack>
-      <VStack pt="2rem">
+      {/* <VStack pt="2rem">
         <VStack w="100%" alignItems="flex-start">
           <Text className={styles.profileName}>Badges</Text>
         </VStack>
         <SimpleGrid columns={4} gap={5}>
-          {[0, 0, 0, 0].map((num) => (
-            <Box w="300px" key={num}>
-              <Image src="/tronnaut.jpg" borderRadius="20px"></Image>
+          {[
+            "/nft_sunswap.jpg",
+            "/nft_justlend.png",
+            "/nft_apenft.png",
+            "/nft_juststables.png",
+          ].map((url) => (
+            <Box w="300px" key={url}>
+              <Image src={url} borderRadius="20px"></Image>
             </Box>
           ))}
         </SimpleGrid>
-      </VStack>
+      </VStack> */}
     </VStack>
   );
 }

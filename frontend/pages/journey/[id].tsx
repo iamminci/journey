@@ -14,7 +14,7 @@ import { useRouter } from "next/router";
 import { useCallback, useEffect, useState } from "react";
 import withTransition from "@components/withTransition";
 import Error404 from "@components/404";
-import QuestCard from "@components/QuestCard";
+import QuestCard from "@components/Card";
 import { dummyQuests } from "@data/quests";
 import RewardPill from "@components/RewardPill";
 
@@ -180,58 +180,62 @@ function Quest() {
       <VStack className={styles.questContainer}>
         <HStack pb="1rem" gap={2}>
           <Image
-            src={fetchedQuest.imageUrl}
+            src={fetchedQuest.partner.image_url}
             alt="hi"
             className={styles.dappLogo}
           ></Image>
           <VStack className={styles.questTitleContainer}>
-            <Text className={styles.questTitle}>{fetchedQuest.title}</Text>
+            <Text className={styles.questTitle}>Become a Sun Specialist</Text>
             <Text className={styles.questSubtitle}>
-              {fetchedQuest.description}
+              Master all the features available on the sun.io platform
             </Text>
           </VStack>
         </HStack>
         <HStack width="100%" justifyContent="space-between" pb=".5rem">
-          <Text>Your progress: 0/3</Text>
+          <Text>Your progress: 1/3</Text>
           <HStack>
-            <Text>17275/20000 rewarded</Text>
+            <Text>2 rewarded</Text>
           </HStack>
         </HStack>
         <Box className={styles.divider} />
       </VStack>
       <VStack gap={10}>
-        {dummyQuests.slice(0, 3).map(({ title }, idx) => (
-          <HStack key={idx} position="relative">
-            {idx === 0 && (
-              <Image
-                src="/line1.png"
-                alt="line1"
-                className={styles.line1}
-              ></Image>
-            )}
-            {idx % 2 && <Box w="80px"></Box>}
-            <QuestCard
-              title={title}
-              handleClick={handleClick}
-              isLocked={idx !== 0}
-            />
-            {!(idx % 2) && <Box w="80px"></Box>}
-            {idx === 1 && (
-              <Image
-                src="/line2.png"
-                alt="line2"
-                className={styles.line2}
-              ></Image>
-            )}
-            {idx === 2 && (
-              <Image
-                src="/line3.png"
-                alt="line3"
-                className={styles.line3}
-              ></Image>
-            )}
-          </HStack>
-        ))}
+        {dummyQuests
+          .slice(0, 3)
+          .map(({ title, description, image_url }, idx) => (
+            <HStack key={idx} position="relative">
+              {idx === 0 && (
+                <Image
+                  src="/line1.png"
+                  alt="line1"
+                  className={styles.line1}
+                ></Image>
+              )}
+              {idx % 2 && <Box w="80px"></Box>}
+              <QuestCard
+                title={title}
+                description={description}
+                image_url={image_url}
+                handleClick={handleClick}
+                isLocked={idx !== 0}
+              />
+              {!(idx % 2) && <Box w="80px"></Box>}
+              {idx === 1 && (
+                <Image
+                  src="/line2.png"
+                  alt="line2"
+                  className={styles.line2}
+                ></Image>
+              )}
+              {idx === 2 && (
+                <Image
+                  src="/line3.png"
+                  alt="line3"
+                  className={styles.line3}
+                ></Image>
+              )}
+            </HStack>
+          ))}
         <VStack pb="5rem">
           <RewardPill label="Achievement: Sun Expert" />
           <Box w="1" height="10px"></Box>
