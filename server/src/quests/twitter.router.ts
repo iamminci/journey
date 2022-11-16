@@ -1,9 +1,7 @@
 import express, { Request, Response } from "express";
 import * as dotenv from "dotenv";
 import { Client } from "twitter-api-sdk";
-import { doc, getDoc } from "firebase/firestore";
-import db from "../../firebase/firebase";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import fetch from "node-fetch";
 
 dotenv.config();
 

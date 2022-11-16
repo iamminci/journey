@@ -4,7 +4,7 @@ import { collection, doc, getDocs, getDoc } from "firebase/firestore";
 
 export const questsRouter = express.Router();
 
-// fetch all quests: http://localhost:8888/api/quests/
+// fetch all quests: https://journey-server.onrender.com/api/quests/
 questsRouter.get("/", async (req: Request, res: Response) => {
   try {
     const query = collection(db, "quests");
@@ -27,7 +27,7 @@ questsRouter.get("/", async (req: Request, res: Response) => {
   }
 });
 
-// fetch specific quest: http://localhost:8888/api/quests/V2zbf8iYGGGzFnkXQ6tB
+// fetch specific quest: https://journey-server.onrender.com/api/quests/V2zbf8iYGGGzFnkXQ6tB
 questsRouter.get("/:questId", async (req: Request, res: Response) => {
   try {
     const { questId } = req.params;

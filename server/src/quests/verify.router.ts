@@ -3,6 +3,7 @@ import db from "../../firebase/firebase";
 import { doc, getDoc } from "firebase/firestore";
 import { Client } from "twitter-api-sdk";
 import * as dotenv from "dotenv";
+import fetch from "node-fetch";
 
 dotenv.config();
 

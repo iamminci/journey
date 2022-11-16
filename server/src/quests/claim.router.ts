@@ -19,7 +19,7 @@ const tronWeb = new TronWeb({
   privateKey: process.env.PRIVATE_KEY,
 });
 
-// fetch all quests: http://localhost:8888/api/quests/
+// fetch all quests: https://journey-server.onrender.com/api/quests/
 claimRouter.get("/", async (req: Request, res: Response) => {
   try {
     const query = collection(db, "quests");
@@ -42,7 +42,7 @@ claimRouter.get("/", async (req: Request, res: Response) => {
   }
 });
 
-// fetch specific quest: http://localhost:8888/api/quests/V2zbf8iYGGGzFnkXQ6tB
+// fetch specific quest: https://journey-server.onrender.com/api/quest/V2zbf8iYGGGzFnkXQ6tB
 claimRouter.get("/:questId/:address", async (req: Request, res: Response) => {
   try {
     const { questId, address } = req.params;
@@ -104,26 +104,26 @@ claimRouter.get("/:questId/:address", async (req: Request, res: Response) => {
   }
 });
 
-// fetch specific quest: http://localhost:8888/api/quests/V2zbf8iYGGGzFnkXQ6tB
+// fetch specific quest: https://journey-server.onrender.com/api/quests/V2zbf8iYGGGzFnkXQ6tB
 claimRouter.get("/nft", async (req: Request, res: Response) => {
   try {
     // let nft = await tronWeb.contract(abi, "TPf4U83GepX7mjd89L4WW6LK4MXzHGHTgJ");
     // let nft = await tronWeb.contract().at("TPf4U83GepX7mjd89L4WW6LK4MXzHGHTgJ");
 
     // let result = await nft["ownerOf"](1).call();
-    let result = await nft["tokenURI"](1).call();
+    // let result = await nft["tokenURI"](1).call();
 
-    // let result = await nft
-    //   .mintWithTokenURI(
-    //     "TAFY85f6xtVNvriSbXAx1t5YDQ89f871C8",
-    //     1,
-    //     "https://bafybeigp25ig4sdg255y242fabm2da6g7gyxhu7tvdgbtr4jpl3rs23oqe.ipfs.w3s.link/metadata.json"
-    //   )
-    //   .send({
-    //     feeLimit: 100_000_000,
-    //     callValue: 0,
-    //     shouldPollResponse: true,
-    //   });
+    let result = await nft
+      .mintWithTokenURI(
+        "TAFY85f6xtVNvriSbXAx1t5YDQ89f871C8",
+        1,
+        "https://bafybeigp25ig4sdg255y242fabm2da6g7gyxhu7tvdgbtr4jpl3rs23oqe.ipfs.w3s.link/metadata.json"
+      )
+      .send({
+        feeLimit: 100_000_000,
+        callValue: 0,
+        shouldPollResponse: true,
+      });
 
     console.log(result);
     res.status(200).send(result);
