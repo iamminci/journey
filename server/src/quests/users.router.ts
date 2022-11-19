@@ -26,9 +26,7 @@ usersRouter.get("/", async (req: Request, res: Response) => {
         fetchedUsers.push(doc.data());
       });
     }
-    res
-      .status(200)
-      .send({ message: "Successfully fetched", quest: fetchedUsers });
+    res.status(200).send(fetchedUsers);
   } catch (e) {
     console.log(e);
     res.status(500).send("bye");
@@ -65,8 +63,29 @@ usersRouter.post("/new", async (req: Request, res: Response) => {
       address: address,
       uuid: uuidv4(),
       quests: {},
+      xp: 0,
+      twitter: {},
+      joinedAt: new Date().toLocaleDateString(),
+      username: "Untitled User",
     });
-    res.status(202).send("User successfully added");
+    res.status(200).send("User successfully added");
+  } catch (e) {
+    console.log(e);
+    res.status(500).send("bye");
+  }
+});
+
+// // create a new user
+usersRouter.post("/username", async (req: Request, res: Response) => {
+  try {
+    const { address, newUsername } = req.body;
+
+    const docRef = doc(db, "users", address);
+
+    await updateDoc(docRef, {
+      username: newUsername,
+    });
+    res.status(200).send("Username successfully updated");
   } catch (e) {
     console.log(e);
     res.status(500).send("bye");
@@ -83,7 +102,7 @@ usersRouter.post("/startQuest", async (req: Request, res: Response) => {
     await updateDoc(docRef, {
       quests: newQuests,
     });
-    res.status(202).send("Quest successfully started");
+    res.status(200).send("Quest successfully started");
   } catch (e) {
     console.log(e);
     res.status(500).send("bye");
@@ -100,7 +119,7 @@ usersRouter.put("/:address", async (req: Request, res: Response) => {
     await updateDoc(docRef, {
       quests: quests,
     });
-    res.status(202).send("User successfully added");
+    res.status(200).send("User successfully added");
   } catch (e) {
     console.log(e);
     res.status(500).send("bye");

@@ -42,7 +42,6 @@ claimRouter.get("/", async (req: Request, res: Response) => {
   }
 });
 
-// fetch specific quest: https://journey-server.onrender.com/api/quest/V2zbf8iYGGGzFnkXQ6tB
 claimRouter.get("/:questId/:address", async (req: Request, res: Response) => {
   try {
     const { questId, address } = req.params;
@@ -51,7 +50,12 @@ claimRouter.get("/:questId/:address", async (req: Request, res: Response) => {
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
-      const { token_reward, nft_reward, xp: questXP } = docSnap.data();
+      const {
+        token_reward,
+        nft_reward,
+        xp: questXP,
+        completed_users,
+      } = docSnap.data();
 
       // SEND TOKEN REWARD
       const tokenResult = await tronWeb.trx.sendTransaction(
@@ -59,13 +63,11 @@ claimRouter.get("/:questId/:address", async (req: Request, res: Response) => {
         token_reward.amount * 10 ** 6
       );
 
-      // MAIN 1 address: TSdnCq3C9khyoA9ajD8bW7ZUFXneWr9zkw
       // SEND NFT REWARD
       const nftContract = await tronWeb
         .contract()
-        .at("TVLZLczRjzMJyGCSWGE7G5K51KursmpUDE");
-
-      //   let result = await nft["getLastTokenId"]().call();
+        // .at("TVLZLczRjzMJyGCSWGE7G5K51KursmpUDE");
+        .at("TEaRdU1GNh1vAHLG4QxxZqQAoNqBEMTgE9");
 
       const nftResult = await nftContract
         .mintWithTokenURI(address, nft_reward.token_uri)
@@ -89,6 +91,13 @@ claimRouter.get("/:questId/:address", async (req: Request, res: Response) => {
           xp: userXP + questXP,
         });
       }
+
+      // add user to completed_users array
+      const prevCompletedUsers = JSON.parse(JSON.stringify(completed_users));
+      prevCompletedUsers.push(address);
+      await updateDoc(docRef, {
+        completed_users: prevCompletedUsers,
+      });
 
       res.status(200).send({
         message: "Reward successfully claimed",

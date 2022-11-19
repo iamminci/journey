@@ -1,6 +1,6 @@
 import express, { Request, Response } from "express";
 import db from "../../firebase/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { Client } from "twitter-api-sdk";
 import * as dotenv from "dotenv";
 import fetch from "node-fetch";
@@ -39,7 +39,7 @@ verifyRouter.get("/:questId/:address", async (req: Request, res: Response) => {
 
         if (questDocSnap.exists()) {
           // fetch steps from quest
-          const { steps } = questDocSnap.data();
+          const { steps, numSteps } = questDocSnap.data();
 
           // find user current step details from quest
           const activeStep = steps[currentStep];
@@ -47,6 +47,7 @@ verifyRouter.get("/:questId/:address", async (req: Request, res: Response) => {
           const {
             contract_address,
             amount,
+            decimals,
             method,
             contract_addresses,
             methods,
@@ -84,7 +85,7 @@ verifyRouter.get("/:questId/:address", async (req: Request, res: Response) => {
                     isValidTimestamp(txn, startedAt) &&
                     isValidContract(txn, contract_addresses[i]) &&
                     isValidMethod(txn, methods[i]) &&
-                    isValidAmount(txn, amount)
+                    isValidAmount(txn, amount, decimals)
                   )
                     return true;
                 });
@@ -131,7 +132,14 @@ verifyRouter.get("/:questId/:address", async (req: Request, res: Response) => {
 
 /* QUEST VERIFICATION HELPERS */
 function isValidTimestamp(txn: any, startedAt: number) {
+  if (!txn.block_timestamp) {
+    console.log("is valid timestamp failed");
+    console.log("txn.block_timestamp not found");
+    return false;
+  }
+
   const result = txn.block_timestamp > startedAt;
+
   if (!result) {
     console.log("is valid timestamp failed");
     console.log("txn.block_timestamp: ", txn.block_timestamp);
@@ -141,9 +149,16 @@ function isValidTimestamp(txn: any, startedAt: number) {
 }
 
 function isValidContract(txn: any, contractAddress: string) {
+  if (!txn.raw_data || !txn.raw_data.contract) {
+    console.log("is valid contract failed");
+    console.log("txn.raw_data or txn.raw_data.contract not found");
+    return false;
+  }
+
   const result =
     txn.raw_data.contract[0].parameter.value.contract_address ===
     contractAddress;
+
   if (!result) {
     console.log("is valid contract failed");
     console.log(
@@ -169,17 +184,25 @@ function isValidMethod(txn: any, method: string) {
   return txn.raw_data.contract[0].parameter.value.data.slice(0, 8) === method;
 }
 
-function isValidAmount(txn: any, amount: number) {
-  if (!txn.raw_data.contract[0].parameter.value.call_value) return true;
-  const result =
-    txn.raw_data.contract[0].parameter.value.call_value >= amount * 10 ** 6;
+function isValidAmount(txn: any, amount: number, decimals = 6) {
+  let result = false;
+
+  let txnAmount = txn.raw_data.contract[0].parameter.value.call_value;
+
+  if (!txnAmount) {
+    const data = txn.raw_data.contract[0].parameter.value.data;
+    const hexAmount = data.substring(data.length - decimals * 2);
+    txnAmount = parseInt(hexAmount, 16);
+    result = txnAmount >= amount * 10 ** decimals;
+  } else {
+    result = txnAmount >= amount * 10 ** decimals;
+  }
+
   if (!result) {
     console.log("is valid amount failed");
-    console.log(
-      "txn.raw_data.contract[0].parameter.value.call_value: ",
-      txn.raw_data.contract[0].parameter.value.call_value
-    );
-    console.log("amount * 10 ** 6: ", amount * 10 ** 6);
+    console.log("txnAmount: ", txnAmount);
+    console.log("verifying amount: ", amount * 10 ** decimals);
   }
+
   return result;
 }
