@@ -1,11 +1,24 @@
-.navbar {
+.navbarContainer {
   position: absolute;
-  justify-content: space-between;
   width: 100%;
-  padding: 2rem;
   z-index: 100 !important;
+  color: white;
+}
+
+.navbar {
+  margin-top: 0 !important;
+  width: 100%;
+  padding: 1rem 2rem;
+  justify-content: space-between;
   height: 72px;
   color: white;
+}
+
+.announcement {
+  width: 100%;
+  padding: 0.1rem;
+  text-align: center;
+  background-color: #82000b;
 }
 
 .logo {

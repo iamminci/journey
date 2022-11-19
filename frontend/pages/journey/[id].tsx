@@ -18,6 +18,11 @@ import QuestCard from "@components/Card";
 import { dummyQuests } from "@data/quests";
 import RewardPill from "@components/RewardPill";
 
+const JOURNEY_API_URL =
+  process.env.NEXT_PUBLIC_ENV === "prod"
+    ? process.env.NEXT_PUBLIC_API_PROD
+    : process.env.NEXT_PUBLIC_API_DEV;
+
 function Quest() {
   const toast = useToast();
 
@@ -66,15 +71,13 @@ function Quest() {
         quests: newQuests,
       }),
     };
-    await fetch(`http://localhost:8888/api/users/${address}`, requestOptions);
+    await fetch(`${JOURNEY_API_URL}/api/users/${address}`, requestOptions);
   }, [address, fetchedUser, questId]);
 
   const fetchUser = useCallback(async () => {
     if (!address) return;
     try {
-      const response = await fetch(
-        `http://localhost:8888/api/users/${address}`
-      );
+      const response = await fetch(`${JOURNEY_API_URL}/api/users/${address}`);
       if (response.status === 200) {
         const user = await response.json();
         console.log("successfully fetched user: ", user);
@@ -90,7 +93,7 @@ function Quest() {
   const verifyQuest = useCallback(async () => {
     try {
       const response = await fetch(
-        `http://localhost:8888/api/verify/${questId}/${address}`
+        `${JOURNEY_API_URL}/api/verify/${questId}/${address}`
       );
       if (response.status === 200) {
         setSuccessful(true);
@@ -123,7 +126,7 @@ function Quest() {
             },
           }),
         };
-        await fetch(`http://localhost:8888/api/users/new`, requestOptions);
+        await fetch(`${JOURNEY_API_URL}/api/users/new`, requestOptions);
       }
       await fetchUser();
     } catch (err) {
@@ -149,7 +152,7 @@ function Quest() {
       setLoading(true);
       try {
         const response = await fetch(
-          `http://localhost:8888/api/quests/${questId}`
+          `${JOURNEY_API_URL}/api/quests/${questId}`
         );
         const quest = await response.json();
         setFetchedQuest(quest);

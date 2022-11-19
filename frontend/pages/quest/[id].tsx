@@ -7,90 +7,59 @@ import {
   useToast,
   Box,
   Spinner,
+  Link as ChakraLink,
 } from "@chakra-ui/react";
 import { useTron } from "@components/TronProvider";
 import styles from "@styles/Quest.module.css";
 import { useRouter } from "next/router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { CheckCircleIcon, LockIcon } from "@chakra-ui/icons";
 import withTransition from "@components/withTransition";
 import Error404 from "@components/404";
 import Confetti from "react-confetti";
 import { FaTwitter } from "react-icons/fa";
+import {
+  toastClaimFailure,
+  toastClaimSuccess,
+  toastVerifyFailure,
+  toastVerifySuccess,
+} from "@utils/toast";
+
+const JOURNEY_API_URL =
+  process.env.NEXT_PUBLIC_ENV === "prod"
+    ? process.env.NEXT_PUBLIC_API_PROD
+    : process.env.NEXT_PUBLIC_API_DEV;
 
 function Quest() {
-  const toast = useToast();
-  const [hasClaimedReward, setClaimedReward] = useState<boolean>(false);
-  const [isQuestCompleted, setQuestCompleted] = useState<boolean>(false);
-  const [isQuestActive, setQuestActive] = useState<boolean>(false);
-  const [currentStep, setCurrentStep] = useState<any>(0);
-  const [fetchedUser, setFetchedUser] = useState<any>();
-  const [fetchedQuest, setFetchedQuest] = useState<any>();
-  const [isVerifyLoading, setVerifyLoading] = useState<boolean>(false);
-  const [isStartLoading, setStartLoading] = useState<boolean>(false);
-  const [isClaimLoading, setClaimLoading] = useState<boolean>(false);
-  const [isLoading, setLoading] = useState<boolean>(false);
-  const router = useRouter();
   const { address } = useTron();
 
+  const toast = useToast();
+  const router = useRouter();
   const { id: questId } = router.query;
 
-  const showSuccessToast = useCallback(
-    (isClaim?: boolean) => {
-      toast({
-        title: isClaim ? "Claim success!" : "Verification success!",
-        description: isClaim
-          ? "You've successfully claimed your reward."
-          : "You've successfully completed your quest.",
-        status: "success",
-        duration: 5000,
-        isClosable: true,
-      });
+  const [fetchedUser, setFetchedUser] = useState<any>();
+  const [fetchedQuest, setFetchedQuest] = useState<any>();
+
+  const [isQuestLoading, setQuestLoading] = useState<boolean>(false);
+  const [isStartLoading, setStartLoading] = useState<boolean>(false);
+  const [isVerifyLoading, setVerifyLoading] = useState<boolean>(false);
+  const [isClaimLoading, setClaimLoading] = useState<boolean>(false);
+
+  const connectTwitter = useCallback(
+    (e: any) => {
+      e.preventDefault();
+      router.push("/twitter");
     },
-    [toast]
+    [router]
   );
-
-  const showFailedToast = useCallback(
-    (isClaim?: boolean) => {
-      toast({
-        title: isClaim ? "Claim failed." : "Verification failed.",
-        description: isClaim
-          ? "Oops, claim failed. Please standby."
-          : "We're unable to verify your completion.",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
-    },
-    [toast]
-  );
-
-  const updateQuestStatus = useCallback(async () => {
-    if (!fetchedUser) return;
-
-    const newQuests = JSON.parse(JSON.stringify(fetchedUser.quests));
-    newQuests[questId as string].currentStep = currentStep + 1;
-
-    const requestOptions = {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        address: address,
-        quests: newQuests,
-      }),
-    };
-    await fetch(`http://localhost:8888/api/users/${address}`, requestOptions);
-  }, [address, currentStep, fetchedUser, questId]);
 
   const fetchUser = useCallback(async () => {
     if (!address) return;
     try {
-      const response = await fetch(
-        `http://localhost:8888/api/users/${address}`
-      );
+      const response = await fetch(`${JOURNEY_API_URL}/api/users/${address}`);
       if (response.status === 200) {
         const user = await response.json();
-        console.log("successfully fetched user: ", user);
+        console.log("user fetched: ", user);
         setFetchedUser(user);
         return user;
       }
@@ -99,157 +68,203 @@ function Quest() {
     }
   }, [address]);
 
-  // check quest has completed
+  const fetchQuest = useCallback(async () => {
+    if (!questId) return;
+    setQuestLoading(true);
+    try {
+      const response = await fetch(`${JOURNEY_API_URL}/api/quests/${questId}`);
+      if (response.status === 200) {
+        const quest = await response.json();
+        console.log("quest fetched: ", quest);
+        setFetchedQuest(quest);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+    setQuestLoading(false);
+  }, [questId]);
+
+  // increment current setp and update user quest status
+  const updateQuestStatus = useCallback(
+    async (isRewarded?: boolean) => {
+      if (!fetchedUser) return;
+
+      const fetchedStep = fetchedUser.quests[questId as string].currentStep;
+      const newQuests = JSON.parse(JSON.stringify(fetchedUser.quests));
+
+      const isCompleted = fetchedStep === fetchedQuest.numSteps - 1;
+
+      if (isRewarded) {
+        newQuests[questId as string].status = "rewarded";
+      } else {
+        newQuests[questId as string].currentStep = fetchedStep + 1;
+
+        if (isCompleted) {
+          newQuests[questId as string].status = "completed";
+        }
+      }
+
+      const requestOptions = {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          address: address,
+          quests: newQuests,
+        }),
+      };
+
+      const response = await fetch(
+        `${JOURNEY_API_URL}/api/users/${address}`,
+        requestOptions
+      );
+
+      if (response.status === 200) {
+        await fetchUser();
+      }
+    },
+    [address, fetchUser, fetchedQuest, fetchedUser, questId]
+  );
+
+  // check quest has completed and update quest status
   const verifyQuest = useCallback(async () => {
     setVerifyLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:8888/api/verify/${questId}/${address}`
+        `${JOURNEY_API_URL}/api/verify/${questId}/${address}`
       );
       if (response.status === 200) {
-        showSuccessToast();
+        toastVerifySuccess(toast);
         await updateQuestStatus();
-        if (currentStep === fetchedQuest.numSteps - 1) setQuestCompleted(true);
-        setCurrentStep((prev) => prev + 1);
       } else {
-        showFailedToast();
+        toastVerifyFailure(toast);
       }
     } catch (err) {
       console.log(err);
     }
     setVerifyLoading(false);
-  }, [
-    address,
-    currentStep,
-    fetchedQuest,
-    questId,
-    showFailedToast,
-    showSuccessToast,
-    updateQuestStatus,
-  ]);
+  }, [address, questId, toast, updateQuestStatus]);
 
   // update user quest status
   const startQuest = useCallback(async () => {
     setStartLoading(true);
+    if (!address || !questId) return;
     try {
       const newQuests = JSON.parse(JSON.stringify(fetchedUser.quests));
+
+      // add new quest status into user's quests map
       newQuests[questId as string] = {
         questId: questId,
         startedAt: new Date().getTime(),
         currentStep: 0,
+        status: "in_progress",
       };
 
-      if (address) {
-        const requestOptions = {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            address: address,
-            newQuests: newQuests,
-          }),
-        };
-        await fetch(
-          `http://localhost:8888/api/users/startQuest`,
-          requestOptions
-        );
-        setQuestActive(true);
+      const requestOptions = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          address: address,
+          newQuests: newQuests,
+        }),
+      };
+
+      const response = await fetch(
+        `${JOURNEY_API_URL}/api/users/startQuest`,
+        requestOptions
+      );
+
+      if (response.status === 200) {
+        console.log("made it here");
+        await fetchUser();
       }
-      await fetchUser();
     } catch (err) {
       console.log(err);
     }
     setStartLoading(false);
   }, [address, fetchUser, fetchedUser, questId]);
 
-  const refreshState = useCallback(async () => {
-    const user = await fetchUser();
-    if (user && questId && user.quests && user.quests[questId as string]) {
-      if (
-        fetchedQuest &&
-        user.quests[questId as string].currentStep === fetchedQuest.numSteps
-      ) {
-        setQuestCompleted(true);
-      }
-
-      if (
-        fetchedUser &&
-        fetchedUser.quests[questId as string] &&
-        fetchedUser.quests[questId as string].hasClaimed
-      ) {
-        setClaimedReward(true);
-      }
-      setQuestActive(!!user.quests[questId as string]);
-      setCurrentStep(Number(user.quests[questId as string].currentStep));
-      console.log("state refreshed");
-    }
-  }, [fetchUser, fetchedQuest, fetchedUser, questId]);
-
-  function connectTwitter(e: any) {
-    e.preventDefault();
-    router.push("/profile");
-  }
-
+  // claim quest reward
   const claimReward = useCallback(async () => {
     setClaimLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:8888/api/claim/${questId}/${address}`
+        `${JOURNEY_API_URL}/api/claim/${questId}/${address}`
       );
       if (response.status === 200) {
-        showSuccessToast(true);
-        setClaimedReward(true);
+        toastClaimSuccess(toast);
+        await updateQuestStatus(true);
+        await fetchQuest();
       } else {
-        showFailedToast(true);
+        toastClaimFailure(toast);
       }
     } catch (err) {
       console.log(err);
     }
     setClaimLoading(false);
-  }, [address, questId, showFailedToast, showSuccessToast]);
+  }, [address, fetchQuest, questId, toast, updateQuestStatus]);
 
-  // fetches user
-  useEffect(() => {
-    refreshState();
-  }, [address, fetchUser, questId, refreshState]);
+  const isQuestCompleted = useMemo(
+    () =>
+      fetchedUser &&
+      fetchedUser.quests &&
+      fetchedUser.quests[questId as string] &&
+      fetchedUser.quests[questId as string].status === "completed",
+    [fetchedUser, questId]
+  );
 
-  // fetches quest
+  const isQuestRewarded = useMemo(
+    () =>
+      fetchedUser &&
+      fetchedUser.quests &&
+      fetchedUser.quests[questId as string] &&
+      fetchedUser.quests[questId as string].status === "rewarded",
+    [fetchedUser, questId]
+  );
+
+  const isQuestActive = useMemo(
+    () => (fetchedUser ? !!fetchedUser.quests[questId as string] : false),
+    [fetchedUser, questId]
+  );
+
+  const currentStep = useMemo(
+    () =>
+      fetchedUser && fetchedUser.quests[questId as string]
+        ? Number(fetchedUser.quests[questId as string].currentStep)
+        : 0,
+    [fetchedUser, questId]
+  );
+
+  const questSteps = useMemo(
+    () => (fetchedQuest ? Object.values(fetchedQuest.steps) : []),
+    [fetchedQuest]
+  );
+
+  // set fetched quest on initial render
   useEffect(() => {
-    async function fetchQuest() {
-      if (!questId) return;
-      setLoading(true);
-      try {
-        const response = await fetch(
-          `http://localhost:8888/api/quests/${questId}`
-        );
-        const quest = await response.json();
-        console.log("fetched quest: ", quest);
-        setFetchedQuest(quest);
-      } catch (err) {
-        console.log(err);
-      }
-      setLoading(false);
+    if (!fetchedQuest) {
+      fetchQuest();
     }
-    fetchQuest();
-  }, [questId]);
+    if (!fetchedUser) {
+      fetchUser();
+    }
+  }, [fetchQuest, fetchUser, fetchedQuest, fetchedUser, questId]);
 
-  if (isLoading)
+  if (isQuestLoading)
     return (
       <VStack className={styles.loadingContainer}>
         <Spinner color="white" size="xl" />
       </VStack>
     );
 
-  if (!fetchedQuest) return <Error404 />;
-
-  const questSteps = Object.values(fetchedQuest.steps);
+  if (!fetchedUser || !fetchedQuest) return <Error404 />;
 
   return (
     <VStack className={styles.container}>
-      {isQuestCompleted && (
+      {isQuestRewarded && (
         <Confetti width={1450} height={1000} numberOfPieces={100} />
       )}
       {fetchedQuest && (
-        <HStack alignItems="flex-start">
+        <HStack alignItems="flex-start" gap={6}>
           <VStack
             className={
               isQuestCompleted
@@ -260,8 +275,8 @@ function Quest() {
             <Text className={styles.rewardTitle}>Quest Reward</Text>
             {fetchedQuest.token_reward && (
               <RewardStep
-                title={`$${fetchedQuest.token_reward.amount} ${fetchedQuest.token_reward.symbol}`}
-                description="Reward will be airdropped into your wallet"
+                title={`$${fetchedQuest.token_reward.amount} in ${fetchedQuest.token_reward.symbol}`}
+                description="Tokens will be airdropped into your wallet."
                 stepNum={1}
               />
             )}
@@ -276,16 +291,16 @@ function Quest() {
             {fetchedQuest.xp && (
               <RewardStep
                 title={`${fetchedQuest.xp} XP`}
-                description="Collect experience points to level up!"
+                description="Collect experience points to level up on Journey."
                 stepNum={3}
               />
             )}
             <Button
               className={styles.primaryButton}
               onClick={claimReward}
-              isDisabled={!isQuestCompleted || hasClaimedReward}
+              isDisabled={!isQuestCompleted || isQuestRewarded}
             >
-              {hasClaimedReward ? (
+              {isQuestRewarded ? (
                 "Reward claimed"
               ) : isClaimLoading ? (
                 <Spinner />
@@ -311,25 +326,31 @@ function Quest() {
             <HStack width="100%" justifyContent="space-between" pb=".5rem">
               <Text>
                 My progress:{" "}
-                {isQuestCompleted
+                {isQuestRewarded || isQuestCompleted
                   ? "Completed!"
                   : !isQuestActive
                   ? "Not Started"
                   : `${currentStep}/${questSteps.length} completed`}
               </Text>
               <HStack>
-                <Text>17 rewarded</Text>
+                <Text>
+                  {fetchedQuest.completed_users.length} users rewarded
+                </Text>
               </HStack>
             </HStack>
             <Box className={styles.divider} />
             <VStack pt=".5rem" gap={2}>
               {questSteps.map(
-                ({ title: stepTitle, description, isTwitter }, stepIdx) => (
+                (
+                  { title: stepTitle, description, isTwitter, start_url },
+                  stepIdx
+                ) => (
                   <QuestStep
                     key={stepIdx}
                     stepNum={stepIdx + 1}
                     title={stepTitle}
                     user={fetchedUser}
+                    startUrl={start_url}
                     description={description}
                     verifyQuest={verifyQuest}
                     startQuest={startQuest}
@@ -357,6 +378,7 @@ type QuestStepProps = {
   stepNum: number;
   title: string;
   description: string;
+  startUrl: string;
   user: any;
   verifyQuest: () => {};
   startQuest: () => {};
@@ -373,6 +395,7 @@ function QuestStep({
   stepNum,
   title,
   description,
+  startUrl,
   user,
   verifyQuest,
   startQuest,
@@ -400,7 +423,15 @@ function QuestStep({
       </Box>
       <VStack alignItems="flex-start" width="100%">
         <Text className={styles.questStepTitle}>{title}</Text>
-        <Text className={styles.questStepDesc}>{description}</Text>
+        <Text className={styles.questStepDesc}>
+          {description} Start{" "}
+          <ChakraLink href={startUrl} isExternal>
+            <Text as="span" fontWeight={700} color="#bdbdbd">
+              here
+            </Text>
+          </ChakraLink>
+          .
+        </Text>
       </VStack>
       <HStack w="120px">
         {!isQuestActive && stepNum === 1 ? (
@@ -411,7 +442,7 @@ function QuestStep({
           >
             {isStartLoading ? <Spinner /> : "Start"}
           </Button>
-        ) : user && !user.twitter && isTwitter ? (
+        ) : user && !user.twitter.user_id && isTwitter ? (
           <Button
             className={styles.twitterButton}
             onClick={connectTwitter}

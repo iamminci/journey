@@ -1,7 +1,12 @@
+const JOURNEY_API_URL =
+  process.env.NEXT_PUBLIC_ENV === "prod"
+    ? process.env.NEXT_PUBLIC_API_PROD
+    : process.env.NEXT_PUBLIC_API_DEV;
+
 async function fetchUser(address: string) {
   if (!address) return;
   try {
-    const response = await fetch(`http://localhost:8888/api/users/${address}`);
+    const response = await fetch(`${JOURNEY_API_URL}/api/users/${address}`);
     if (response.status === 200) {
       const user = await response.json();
       return user;
@@ -20,7 +25,7 @@ async function createUser(address: string) {
         address: address,
       }),
     };
-    await fetch(`http://localhost:8888/api/users/new`, requestOptions);
+    await fetch(`${JOURNEY_API_URL}/api/users/new`, requestOptions);
   } catch (err) {
     console.log(err);
   }
@@ -45,15 +50,19 @@ export async function handleConnect(setLoading, setAddress, provider) {
   } catch (error) {
     console.log(error);
   }
-  //   setLoading(false);
 }
 
-export async function handleDisconnect(setIsLoading, setAddress) {
+export async function handleDisconnect(
+  setIsLoading,
+  setAddress,
+  handleNavigate
+) {
   setIsLoading(true);
   try {
     setTimeout(() => {
       setAddress("");
       window.localStorage.removeItem("TRON_ADDRESS");
+      handleNavigate();
       setIsLoading(false);
     }, 500);
   } catch (error) {

@@ -5,6 +5,7 @@ import { ChakraProvider, extendTheme } from "@chakra-ui/react";
 import Head from "next/head";
 import Navbar from "@components/Navbar";
 import { TronProvider } from "@components/TronProvider";
+import { useEffect, useState } from "react";
 
 const theme = extendTheme({
   styles: {
@@ -29,6 +30,11 @@ const theme = extendTheme({
 });
 
 export default function App({ Component, pageProps, router }: AppProps) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
   return (
     <ChakraProvider theme={theme}>
       <TronProvider>

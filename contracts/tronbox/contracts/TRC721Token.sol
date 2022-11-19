@@ -990,9 +990,6 @@ contract TRC721Metadata is Context, TRC165, TRC721, ITRC721Metadata {
     // Token symbol
     string private _symbol;
 
-    // Base URI
-    string private _baseURI;
-
     // Optional mapping for token URIs
     mapping(uint256 => string) private _tokenURIs;
 
@@ -1053,13 +1050,7 @@ contract TRC721Metadata is Context, TRC165, TRC721, ITRC721Metadata {
 
         string memory _tokenURI = _tokenURIs[tokenId];
 
-        // Even if there is a base URI, it is only appended to non-empty token-specific URIs
-        if (bytes(_tokenURI).length == 0) {
-            return "";
-        } else {
-            // abi.encodePacked is being used to concatenate strings
-            return string(abi.encodePacked(_baseURI, _tokenURI));
-        }
+        return _tokenURI;
     }
 
     /**
@@ -1086,27 +1077,6 @@ contract TRC721Metadata is Context, TRC165, TRC721, ITRC721Metadata {
             "TRC721Metadata: URI set of nonexistent token"
         );
         _tokenURIs[tokenId] = _tokenURI;
-    }
-
-    /**
-     * @dev Internal function to set the base URI for all token IDs. It is
-     * automatically added as a prefix to the value returned in {tokenURI}.
-     *
-     * _Available since v2.5.0._
-     */
-    function _setBaseURI(string memory __baseURI) internal {
-        _baseURI = __baseURI;
-    }
-
-    /**
-     * @dev Returns the base URI set via {_setBaseURI}. This will be
-     * automatically added as a preffix in {tokenURI} to each token's URI, when
-     * they are non-empty.
-     *
-     * _Available since v2.5.0._
-     */
-    function baseURI() external view returns (string memory) {
-        return _baseURI;
     }
 }
 
@@ -1194,5 +1164,5 @@ interface ITRC721Enumerable is ITRC721 {
 }
 
 contract TRC721Token is TRC721, TRC721MetadataMintable {
-    constructor() TRC721Metadata("Your Token Name", "YTN") {}
+    constructor() TRC721Metadata("Journey NFT Badge", "JOURNEY") {}
 }

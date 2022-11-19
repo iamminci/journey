@@ -56,7 +56,7 @@ export default function QuestCard({
       </VStack>
       <Box w={144} opacity={isLocked ? 0.55 : 1}>
         <Image
-          src={nft_reward.image_url}
+          src={nft_reward.preview_url}
           alt="tronnaut"
           borderRadius={20}
         ></Image>

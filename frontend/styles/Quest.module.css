@@ -152,7 +152,7 @@
 }
 
 .rewardStep {
-  padding: 25px 15px;
+  padding: 20px;
   gap: 10px;
   width: 100%;
   background: #000113;
@@ -161,7 +161,7 @@
 }
 
 .nftImage {
-  width: 150px;
+  width: 200px;
   border-radius: 10px;
 }
 
@@ -169,4 +169,11 @@
   font-weight: 700;
   font-size: 24px;
   line-height: 24px;
+}
+
+.sectionTitle {
+  font-weight: 700;
+  font-size: 28px;
+  line-height: 36px;
+  padding-bottom: 1rem;
 }

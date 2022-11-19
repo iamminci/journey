@@ -8,29 +8,172 @@ import {
   Image,
   Box,
   SimpleGrid,
+  Spinner,
 } from "@chakra-ui/react";
 import Landing from "@components/Landing";
 import { useTron } from "@components/TronProvider";
 import withTransition from "@components/withTransition";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import styles from "@styles/Profile.module.css";
 import { abridgeAddress } from "@utils/abridgeAddress";
-import { FaDiscord, FaGithub, FaTwitter } from "react-icons/fa";
+import {
+  FaDiscord,
+  FaGithub,
+  FaTwitter,
+  FaPencilAlt,
+  FaCheck,
+} from "react-icons/fa";
 import RewardPill from "@components/RewardPill";
+import Error404 from "@components/404";
+import Link from "next/link";
+import { useRouter } from "next/router";
+
+const JOURNEY_API_URL =
+  process.env.NEXT_PUBLIC_ENV === "prod"
+    ? process.env.NEXT_PUBLIC_API_PROD
+    : process.env.NEXT_PUBLIC_API_DEV;
 
 function Profile() {
   const { address } = useTron();
+  const router = useRouter();
+
+  const [fetchedUser, setFetchedUser] = useState<any>();
+  const [fetchedQuests, setFetchedQuests] = useState<any[]>([]);
+  const [isQuestsLoading, setQuestsLoading] = useState<boolean>(false);
+  const [isUserLoading, setUserLoading] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [newUsername, setNewUsername] = useState<string>("");
+
+  const connectTwitter = useCallback(
+    (e: any) => {
+      e.preventDefault();
+      router.push("/twitter");
+    },
+    [router]
+  );
+
+  const goToExplore = useCallback(
+    (e: any) => {
+      e.preventDefault();
+      router.push("/");
+    },
+    [router]
+  );
+
+  const fetchQuests = useCallback(async () => {
+    setQuestsLoading(true);
+    try {
+      const response = await fetch(`${JOURNEY_API_URL}/api/quests`);
+      if (response.status === 200) {
+        const { quests } = await response.json();
+        console.log("fetched quests: ", quests);
+        setFetchedQuests(quests);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+    setQuestsLoading(false);
+  }, []);
+
+  const fetchUser = useCallback(async () => {
+    if (!address) return;
+    setUserLoading(true);
+    try {
+      const response = await fetch(`${JOURNEY_API_URL}/api/users/${address}`);
+      if (response.status === 200) {
+        const user = await response.json();
+        console.log("user fetched: ", user);
+        setFetchedUser(user);
+      }
+    } catch (err) {
+      console.log(err);
+    }
+    setUserLoading(false);
+  }, [address]);
+
+  function handleUsernameChange(e) {
+    e.preventDefault();
+    setNewUsername(e.target.value);
+  }
+
+  const updateUsername = useCallback(async () => {
+    try {
+      const requestOptions = {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          address: address,
+          newUsername: newUsername,
+        }),
+      };
+
+      const response = await fetch(
+        `${JOURNEY_API_URL}/api/users/username`,
+        requestOptions
+      );
+
+      if (response.status === 200) {
+        await fetchUser();
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  }, [address, fetchUser, newUsername]);
+
+  async function handleEditMode() {
+    if (isEditing) {
+      await updateUsername();
+      setIsEditing(false);
+    } else {
+      setIsEditing(true);
+    }
+  }
+
+  useEffect(() => {
+    fetchUser();
+    fetchQuests();
+  }, [fetchQuests, fetchUser]);
+
+  const completedQuests = useMemo(() => {
+    if (!fetchedUser || fetchedQuests.length === 0) return [];
+    const userQuests = Object.keys(fetchedUser.quests);
+    const completedQuestIds = userQuests.filter(
+      (questId) => fetchedUser.quests[questId].status === "rewarded"
+    );
+    return fetchedQuests.filter((quest) =>
+      completedQuestIds.includes(quest.id)
+    );
+  }, [fetchedQuests, fetchedUser]);
+
+  const username = useMemo(() => {
+    if (!fetchedUser) return "";
+    return fetchedUser.username;
+  }, [fetchedUser]);
 
   if (!address) return <Landing />;
 
+  if (isUserLoading || isQuestsLoading)
+    return (
+      <VStack className={styles.loadingContainer}>
+        <Spinner color="white" size="xl" />
+      </VStack>
+    );
+
+  if (!fetchedUser || fetchedQuests.length === 0) return <Error404 />;
+
+  console.log("isEditing: ", isEditing);
+
   return (
-    <VStack pt="6rem">
+    <VStack pt="6rem" pb="6rem">
       <VStack w="1180px" position="relative">
         <Image src="/cover.png" alt="cover"></Image>
         <HStack className={styles.profileContainer}>
           <HStack w="33%" alignItems="flex-end">
             {/* <RewardPill imageUrl="/medal.svg" label="Platinum" /> */}
-            <RewardPill imageUrl="/sparkle.svg" label="0 XP" />
+            <RewardPill
+              imageUrl="/sparkle.svg"
+              label={`${fetchedUser.xp} XP`}
+            />
           </HStack>
           <VStack w="33%">
             <Image
@@ -38,114 +181,88 @@ function Profile() {
               alt="profile"
               className={styles.profileImage}
             ></Image>
-            <Text className={styles.profileName}>Untitled user</Text>
+            <HStack>
+              {isEditing ? (
+                <Input
+                  placeholder={fetchedUser.username}
+                  value={newUsername}
+                  onChange={handleUsernameChange}
+                  width="80%"
+                ></Input>
+              ) : (
+                <Text className={styles.profileName}>{username}</Text>
+              )}
+              <VStack className={styles.editIcon} onClick={handleEditMode}>
+                {isEditing ? (
+                  <FaCheck />
+                ) : (
+                  <FaPencilAlt className={styles.pencilIcon} />
+                )}
+              </VStack>
+            </HStack>
             <Text className={styles.profileAddress}>
               ({abridgeAddress(address)})
             </Text>
           </VStack>
           <HStack w="33%" justifyContent="flex-end" alignItems="flex-end">
-            <VStack className={styles.socialIcon}>
+            {/* <VStack className={styles.socialIcon}>
               <FaDiscord />
             </VStack>
             <VStack className={styles.socialIcon}>
               <FaGithub />
-            </VStack>
-            <VStack className={styles.socialIcon}>
-              <FaTwitter />
-            </VStack>
+  </VStack>*/}
+            {fetchedUser.twitter && fetchedUser.twitter.user_id ? (
+              <ChakraLink
+                href={`https://twitter.com/${fetchedUser.twitter.username}`}
+                isExternal
+              >
+                <HStack className={styles.socialPill}>
+                  <FaTwitter />
+                  <Text>{fetchedUser.twitter.username}</Text>
+                </HStack>
+              </ChakraLink>
+            ) : (
+              <Button className={styles.twitterButton} onClick={connectTwitter}>
+                <HStack>
+                  <FaTwitter />
+                  <Text>Connect</Text>
+                </HStack>
+              </Button>
+            )}
           </HStack>
         </HStack>
       </VStack>
-      {/* <VStack pt="2rem">
-        <VStack w="100%" alignItems="flex-start">
-          <Text className={styles.profileName}>Badges</Text>
+      {completedQuests.length === 0 ? (
+        <VStack pt="4rem">
+          <Text className={styles.nullTitle}>Welcome to Journey!</Text>
+          <Text className={styles.nullSubtitle}>
+            Claim your first quest badge by completing a quest.
+          </Text>
+          <Button onClick={goToExplore}>Go to quests</Button>
         </VStack>
-        <SimpleGrid columns={4} gap={5}>
-          {[
-            "/nft_sunswap.jpg",
-            "/nft_justlend.png",
-            "/nft_apenft.png",
-            "/nft_juststables.png",
-          ].map((url) => (
-            <Box w="300px" key={url}>
-              <Image src={url} borderRadius="20px"></Image>
-            </Box>
-          ))}
-        </SimpleGrid>
-      </VStack> */}
+      ) : (
+        <VStack pt="2rem">
+          <VStack w="100%" alignItems="flex-start">
+            <Text className={styles.badgeSectionTitle}>Badges</Text>
+          </VStack>
+          <SimpleGrid columns={4} gap={5}>
+            {completedQuests.map(({ id, nft_reward, title }) => (
+              <Link href={`/quest/${id}`} key={id}>
+                <VStack className={styles.badgeContainer}>
+                  <Image
+                    alt="nft"
+                    src={nft_reward.image_url}
+                    className={styles.badgeImage}
+                  />
+                  <Text className={styles.badgeTitle}>{title}</Text>
+                </VStack>
+              </Link>
+            ))}
+          </SimpleGrid>
+        </VStack>
+      )}
     </VStack>
   );
 }
 
 export default withTransition(Profile);
-
-// function TwitterConnect() {
-//   const { address } = useTron();
-//   const [fetchedUser, setFetchedUser] = useState();
-//   const [tweetURL, setTweetURL] = useState("");
-//   const [verified, setVerified] = useState(false);
-//   const [uuid, setUuid] = useState("");
-
-//   useEffect(() => {
-//     async function fetchUser() {
-//       if (!address) return;
-//       try {
-//         const response = await fetch(
-//           `http://localhost:8888/api/users/${address}`
-//         );
-//         if (response.status === 200) {
-//           const user = await response.json();
-//           setFetchedUser(user);
-//         }
-//       } catch (err) {
-//         console.log(err);
-//       }
-//     }
-//     fetchUser();
-//   }, [address]);
-
-//   const authLink = useMemo(() => {
-//     if (!fetchedUser) return "";
-//     return `https://twitter.com/intent/tweet?text=Verifying+uuid:${fetchedUser.uuid}`;
-//   }, [fetchedUser]);
-
-//   async function verifyTwitter() {
-//     try {
-//       const id = tweetURL.split("/")[5];
-//       const response = await fetch(
-//         `http://localhost:8888/api/twitter/tweet/${id}`
-//       );
-//       //   const { data } = await response.json();
-//       //   const fetchedId = data.text.split("uuid:")[1];
-//       //   if (fetchedId === uuid) {
-//       // setVerified(true);
-//       //   }
-//     } catch (err) {
-//       console.log(err);
-//     }
-//   }
-
-//   function handleURLChange(e) {
-//     setTweetURL(e.target.value);
-//   }
-//   return (
-//     <VStack pt="4rem">
-//       <HStack>
-//         <VStack>
-//           <Text>Step 1: Tweet verification message</Text>
-//           <ChakraLink href={authLink} isExternal>
-//             <Button>Tweet</Button>
-//           </ChakraLink>
-//         </VStack>
-//         <VStack>
-//           <Text>Step 2: Paste URL to tweet to verify</Text>
-//           <HStack>
-//             <Input onChange={handleURLChange}></Input>
-//             <Button onClick={verifyTwitter}>Verify Twitter</Button>
-//           </HStack>
-//         </VStack>
-//       </HStack>
-//       {verified && <Text>Verification successful!</Text>}
-//     </VStack>
-//   );
-// }
