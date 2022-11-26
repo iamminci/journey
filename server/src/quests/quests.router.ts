@@ -23,7 +23,7 @@ questsRouter.get("/", async (req: Request, res: Response) => {
       .send({ message: "Successfully fetched", quests: fetchedQuests });
   } catch (e) {
     console.log(e);
-    res.status(500).send("bye");
+    res.status(500).send({ message: "server error" });
   }
 });
 
@@ -43,6 +43,6 @@ questsRouter.get("/:questId", async (req: Request, res: Response) => {
     return;
   } catch (e) {
     console.log(e);
-    res.status(500).send("bye");
+    res.status(500).send({ message: "server error" });
   }
 });

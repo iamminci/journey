@@ -4,7 +4,6 @@ import { useRouter } from "next/router";
 import withTransition from "@components/withTransition";
 import QuestCard from "./QuestCard";
 import { useEffect, useState } from "react";
-import { useTron } from "./TronProvider";
 import Error404 from "@components/404";
 
 const JOURNEY_API_URL =
@@ -13,9 +12,10 @@ const JOURNEY_API_URL =
     : process.env.NEXT_PUBLIC_API_DEV;
 
 function Explore() {
+  const router = useRouter();
+
   const [fetchedQuests, setFetchedQuests] = useState<any[]>([]);
   const [isLoading, setLoading] = useState<boolean>(false);
-  const router = useRouter();
 
   // fetches quest
   useEffect(() => {
@@ -54,6 +54,7 @@ function Explore() {
         <Text className={styles.title}>Explore Quests</Text>
         <SimpleGrid columns={2} gap={5} pt={10}>
           {fetchedQuests
+            .filter((q) => !q.isJourney)
             .sort((a, b) => a.order - b.order)
             .map(
               ({

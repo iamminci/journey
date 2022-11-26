@@ -40,8 +40,8 @@ const Navbar = () => {
             ></Image>
           </Link>
           <HStack className={styles.navLeftSection}>
-            <Link href="/">
-              <Text>Explore</Text>
+            <Link href="/journey/SOEKIWe2g0JDOKTZBl6N">
+              <Text>Journey (Beta)</Text>
             </Link>
             <Link href="/profile">
               <Text>My Profile</Text>

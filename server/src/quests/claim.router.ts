@@ -38,7 +38,7 @@ claimRouter.get("/", async (req: Request, res: Response) => {
       .send({ message: "Successfully fetched", quest: fetchedQuests });
   } catch (e) {
     console.log(e);
-    res.status(500).send("bye");
+    res.status(500).send({ message: "server error" });
   }
 });
 
@@ -48,6 +48,41 @@ claimRouter.get("/:questId/:address", async (req: Request, res: Response) => {
 
     const docRef = doc(db, "quests", questId);
     const docSnap = await getDoc(docRef);
+
+    if (questId === "SOEKIWe2g0JDOKTZBl6N") {
+      if (docSnap.exists()) {
+        const { nft_reward, completed_users } = docSnap.data();
+
+        // SEND NFT REWARD
+        const nftContract = await tronWeb
+          .contract()
+          .at("TEaRdU1GNh1vAHLG4QxxZqQAoNqBEMTgE9");
+
+        const nftResult = await nftContract
+          .mintWithTokenURI(address, nft_reward.token_uri)
+          .send({
+            feeLimit: 100_000_000,
+            callValue: 0,
+            shouldPollResponse: false,
+          });
+
+        // add user to completed_users array
+        const prevCompletedUsers = JSON.parse(JSON.stringify(completed_users));
+        prevCompletedUsers.push(address);
+
+        await updateDoc(docRef, {
+          completed_users: prevCompletedUsers,
+        });
+
+        res.status(200).send({
+          message: "Reward successfully claimed",
+          nftTxn: nftResult,
+        });
+      } else {
+        res.status(404).send({ message: "Journey not found" });
+      }
+      return;
+    }
 
     if (docSnap.exists()) {
       const {
@@ -84,7 +119,7 @@ claimRouter.get("/:questId/:address", async (req: Request, res: Response) => {
       if (userDocSnap.exists()) {
         const { quests, xp: userXP } = userDocSnap.data();
         const newQuests = JSON.parse(JSON.stringify(quests));
-        newQuests[questId as string].hasClaimed = true;
+        newQuests[questId as string].status = "rewarded";
 
         await updateDoc(userDocRef, {
           quests: newQuests,
@@ -95,6 +130,7 @@ claimRouter.get("/:questId/:address", async (req: Request, res: Response) => {
       // add user to completed_users array
       const prevCompletedUsers = JSON.parse(JSON.stringify(completed_users));
       prevCompletedUsers.push(address);
+
       await updateDoc(docRef, {
         completed_users: prevCompletedUsers,
       });
@@ -109,7 +145,7 @@ claimRouter.get("/:questId/:address", async (req: Request, res: Response) => {
     }
   } catch (e) {
     console.log(e);
-    res.status(500).send("bye");
+    res.status(500).send({ message: "server error" });
   }
 });
 
@@ -138,6 +174,6 @@ claimRouter.get("/nft", async (req: Request, res: Response) => {
     res.status(200).send(result);
   } catch (e) {
     console.log(e);
-    res.status(500).send("bye");
+    res.status(500).send({ message: "server error" });
   }
 });

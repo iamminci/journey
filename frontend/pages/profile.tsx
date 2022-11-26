@@ -66,7 +66,6 @@ function Profile() {
       const response = await fetch(`${JOURNEY_API_URL}/api/quests`);
       if (response.status === 200) {
         const { quests } = await response.json();
-        console.log("fetched quests: ", quests);
         setFetchedQuests(quests);
       }
     } catch (err) {
@@ -82,7 +81,6 @@ function Profile() {
       const response = await fetch(`${JOURNEY_API_URL}/api/users/${address}`);
       if (response.status === 200) {
         const user = await response.json();
-        console.log("user fetched: ", user);
         setFetchedUser(user);
       }
     } catch (err) {
@@ -130,9 +128,13 @@ function Profile() {
   }
 
   useEffect(() => {
-    fetchUser();
-    fetchQuests();
-  }, [fetchQuests, fetchUser]);
+    if (!fetchedUser) {
+      fetchUser();
+    }
+    if (fetchedQuests.length === 0) {
+      fetchQuests();
+    }
+  }, [fetchQuests, fetchUser, fetchedQuests, fetchedUser]);
 
   const completedQuests = useMemo(() => {
     if (!fetchedUser || fetchedQuests.length === 0) return [];
@@ -150,6 +152,19 @@ function Profile() {
     return fetchedUser.username;
   }, [fetchedUser]);
 
+  const isJourneyCompleted = useMemo(() => {
+    let completed;
+    if (fetchedQuests.length === 0) return false;
+    fetchedQuests.forEach((q) => {
+      if (q.id === "SOEKIWe2g0JDOKTZBl6N") {
+        if (q.completed_users.includes(address)) {
+          completed = true;
+        }
+      }
+    });
+    return completed;
+  }, [address, fetchedQuests]);
+
   if (!address) return <Landing />;
 
   if (isUserLoading || isQuestsLoading)
@@ -160,8 +175,6 @@ function Profile() {
     );
 
   if (!fetchedUser || fetchedQuests.length === 0) return <Error404 />;
-
-  console.log("isEditing: ", isEditing);
 
   return (
     <VStack pt="6rem" pb="6rem">
@@ -258,6 +271,23 @@ function Profile() {
                 </VStack>
               </Link>
             ))}
+            {isJourneyCompleted && (
+              <Link
+                href={`/journey/SOEKIWe2g0JDOKTZBl6N`}
+                key={"SOEKIWe2g0JDOKTZBl6N"}
+              >
+                <VStack className={styles.badgeContainer}>
+                  <Image
+                    alt="nft"
+                    src="/sunspecialist.gif"
+                    className={styles.badgeImage}
+                  />
+                  <Text className={styles.badgeTitle}>
+                    {"Journey: Sun Specialist"}
+                  </Text>
+                </VStack>
+              </Link>
+            )}
           </SimpleGrid>
         </VStack>
       )}

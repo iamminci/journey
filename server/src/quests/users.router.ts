@@ -29,7 +29,7 @@ usersRouter.get("/", async (req: Request, res: Response) => {
     res.status(200).send(fetchedUsers);
   } catch (e) {
     console.log(e);
-    res.status(500).send("bye");
+    res.status(500).send({ message: "server error" });
   }
 });
 
@@ -49,7 +49,7 @@ usersRouter.get("/:address", async (req: Request, res: Response) => {
     return;
   } catch (e) {
     console.log(e);
-    res.status(500).send("bye");
+    res.status(500).send({ message: "server error" });
   }
 });
 
@@ -71,7 +71,7 @@ usersRouter.post("/new", async (req: Request, res: Response) => {
     res.status(200).send("User successfully added");
   } catch (e) {
     console.log(e);
-    res.status(500).send("bye");
+    res.status(500).send({ message: "server error" });
   }
 });
 
@@ -88,7 +88,7 @@ usersRouter.post("/username", async (req: Request, res: Response) => {
     res.status(200).send("Username successfully updated");
   } catch (e) {
     console.log(e);
-    res.status(500).send("bye");
+    res.status(500).send({ message: "server error" });
   }
 });
 
@@ -105,7 +105,7 @@ usersRouter.post("/startQuest", async (req: Request, res: Response) => {
     res.status(200).send("Quest successfully started");
   } catch (e) {
     console.log(e);
-    res.status(500).send("bye");
+    res.status(500).send({ message: "server error" });
   }
 });
 
@@ -122,6 +122,6 @@ usersRouter.put("/:address", async (req: Request, res: Response) => {
     res.status(200).send("User successfully added");
   } catch (e) {
     console.log(e);
-    res.status(500).send("bye");
+    res.status(500).send({ message: "server error" });
   }
 });

@@ -59,7 +59,6 @@ function Quest() {
       const response = await fetch(`${JOURNEY_API_URL}/api/users/${address}`);
       if (response.status === 200) {
         const user = await response.json();
-        console.log("user fetched: ", user);
         setFetchedUser(user);
         return user;
       }
@@ -75,7 +74,6 @@ function Quest() {
       const response = await fetch(`${JOURNEY_API_URL}/api/quests/${questId}`);
       if (response.status === 200) {
         const quest = await response.json();
-        console.log("quest fetched: ", quest);
         setFetchedQuest(quest);
       }
     } catch (err) {
@@ -174,7 +172,6 @@ function Quest() {
       );
 
       if (response.status === 200) {
-        console.log("made it here");
         await fetchUser();
       }
     } catch (err) {
